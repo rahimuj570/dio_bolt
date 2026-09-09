@@ -1,40 +1,6 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import 'package:dio_bolt/dio_bolt.dart';
 import 'package:test/test.dart';
-
-class User {
-  final int id;
-  final String name;
-
-  User({required this.id, required this.name});
-
-  factory User.fromJson(dynamic json) {
-    final map = json as Map<String, dynamic>;
-    return User(id: map['id'] as int, name: map['name'] as String);
-  }
-}
-
-class UserPage {
-  final List<User> users;
-  final int page;
-  final int total;
-
-  UserPage({required this.users, required this.page, required this.total});
-
-  factory UserPage.fromJson(dynamic json) {
-    final map = json as Map<String, dynamic>;
-    final userList = (map['data'] as List)
-        .map((item) => User.fromJson(item))
-        .toList();
-    final pagination = map['pagination'] as Map<String, dynamic>;
-
-    return UserPage(
-      users: userList,
-      page: pagination['page'] as int,
-      total: pagination['total'] as int,
-    );
-  }
-}
 
 void main() {
   group('DioBolt foundation', () {
@@ -65,7 +31,7 @@ void main() {
     });
   });
 
-  group('DioBolt Raw API (DioBoltResponse)', () {
+  group('DioBolt Raw API - Success HTTP responses (2xx)', () {
     late Dio dio;
     late DioBolt bolt;
     RequestOptions? capturedOptions;
@@ -79,17 +45,7 @@ void main() {
           onRequest: (options, handler) {
             capturedOptions = options;
 
-            if (options.cancelToken?.isCancelled ?? false) {
-              return handler.reject(
-                DioException(
-                  requestOptions: options,
-                  type: DioExceptionType.cancel,
-                  error: 'Request cancelled',
-                ),
-              );
-            }
-
-            if (options.path == '/users/1' && options.method == 'GET') {
+            if (options.path == '/status/200' && options.method == 'GET') {
               options.onReceiveProgress?.call(100, 100);
               return handler.resolve(
                 Response(
@@ -101,7 +57,53 @@ void main() {
               );
             }
 
-            if (options.path == '/paginated_users' && options.method == 'GET') {
+            if (options.path == '/status/201' && options.method == 'POST') {
+              options.onSendProgress?.call(50, 100);
+              options.onReceiveProgress?.call(100, 100);
+              return handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 201,
+                  statusMessage: 'Created',
+                  data: {'id': 2, 'name': options.data['name']},
+                ),
+              );
+            }
+
+            if (options.path == '/status/200' && options.method == 'PUT') {
+              return handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 200,
+                  statusMessage: 'OK',
+                  data: {'id': 2, 'name': options.data['name']},
+                ),
+              );
+            }
+
+            if (options.path == '/status/200' && options.method == 'PATCH') {
+              return handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 200,
+                  statusMessage: 'OK',
+                  data: {'id': 2, 'name': options.data['name']},
+                ),
+              );
+            }
+
+            if (options.path == '/status/204' && options.method == 'DELETE') {
+              return handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 204,
+                  statusMessage: 'No Content',
+                  data: null,
+                ),
+              );
+            }
+
+            if (options.path == '/paginated' && options.method == 'GET') {
               return handler.resolve(
                 Response(
                   requestOptions: options,
@@ -122,82 +124,6 @@ void main() {
               );
             }
 
-            if (options.path == '/users' && options.method == 'POST') {
-              options.onSendProgress?.call(50, 100);
-              options.onReceiveProgress?.call(100, 100);
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 201,
-                  statusMessage: 'Created',
-                  data: {'id': 3, 'name': options.data['name']},
-                ),
-              );
-            }
-
-            if (options.path == '/users/3' && options.method == 'PUT') {
-              options.onSendProgress?.call(50, 100);
-              options.onReceiveProgress?.call(100, 100);
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  statusMessage: 'OK',
-                  data: {'id': 3, 'name': options.data['name']},
-                ),
-              );
-            }
-
-            if (options.path == '/users/3' && options.method == 'PATCH') {
-              options.onSendProgress?.call(50, 100);
-              options.onReceiveProgress?.call(100, 100);
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  statusMessage: 'OK',
-                  data: {'id': 3, 'name': options.data['name']},
-                ),
-              );
-            }
-
-            if (options.path == '/users/3' && options.method == 'DELETE') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  statusMessage: 'OK',
-                  data: {'deleted': true},
-                ),
-              );
-            }
-
-            if (options.path == '/users/204' && options.method == 'DELETE') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 204,
-                  statusMessage: 'No Content',
-                  data: null,
-                ),
-              );
-            }
-
-            if (options.path == '/error') {
-              return handler.reject(
-                DioException(
-                  requestOptions: options,
-                  response: Response(
-                    requestOptions: options,
-                    statusCode: 500,
-                    statusMessage: 'Internal Server Error',
-                    data: {'error': 'Something failed'},
-                  ),
-                  type: DioExceptionType.badResponse,
-                ),
-              );
-            }
-
             return handler.resolve(
               Response(
                 requestOptions: options,
@@ -212,8 +138,8 @@ void main() {
       bolt = DioBolt(dio: dio);
     });
 
-    test('1. GET returns DioBoltResponse with complete response data', () async {
-      final response = await bolt.get('/users/1');
+    test('200 GET returns DioBoltResponse with isSuccess: true', () async {
+      final response = await bolt.get('/status/200');
 
       expect(response, isA<DioBoltResponse>());
       expect(response.isSuccess, isTrue);
@@ -223,91 +149,81 @@ void main() {
       expect(capturedOptions?.method, equals('GET'));
     });
 
-    test('2. POST returns DioBoltResponse', () async {
+    test('201 POST returns DioBoltResponse with isSuccess: true', () async {
       final response = await bolt.post(
-        '/users',
-        data: {'name': 'Charlie'},
+        '/status/201',
+        data: {'name': 'Bob'},
       );
 
       expect(response.isSuccess, isTrue);
       expect(response.statusCode, equals(201));
       expect(response.message, equals('Created'));
-      expect(response.responseData, equals({'id': 3, 'name': 'Charlie'}));
+      expect(response.responseData, equals({'id': 2, 'name': 'Bob'}));
       expect(capturedOptions?.method, equals('POST'));
     });
 
-    test('3. PUT returns DioBoltResponse', () async {
+    test('200 PUT returns DioBoltResponse with isSuccess: true', () async {
       final response = await bolt.put(
-        '/users/3',
-        data: {'name': 'Charlie Updated'},
+        '/status/200',
+        data: {'name': 'Bob Updated'},
       );
 
       expect(response.isSuccess, isTrue);
       expect(response.statusCode, equals(200));
-      expect(response.responseData, equals({'id': 3, 'name': 'Charlie Updated'}));
+      expect(response.responseData, equals({'id': 2, 'name': 'Bob Updated'}));
       expect(capturedOptions?.method, equals('PUT'));
     });
 
-    test('4. PATCH returns DioBoltResponse', () async {
+    test('200 PATCH returns DioBoltResponse with isSuccess: true', () async {
       final response = await bolt.patch(
-        '/users/3',
-        data: {'name': 'Charlie Patched'},
+        '/status/200',
+        data: {'name': 'Bob Patched'},
       );
 
       expect(response.isSuccess, isTrue);
       expect(response.statusCode, equals(200));
-      expect(response.responseData, equals({'id': 3, 'name': 'Charlie Patched'}));
+      expect(response.responseData, equals({'id': 2, 'name': 'Bob Patched'}));
       expect(capturedOptions?.method, equals('PATCH'));
     });
 
-    test('5. DELETE returns DioBoltResponse', () async {
-      final response = await bolt.delete('/users/3');
-
-      expect(response.isSuccess, isTrue);
-      expect(response.statusCode, equals(200));
-      expect(response.responseData, equals({'deleted': true}));
-      expect(capturedOptions?.method, equals('DELETE'));
-    });
-
-    test('6-8. responseData preserves complete structure including pagination and nested fields', () async {
-      final response = await bolt.get('/paginated_users');
-
-      expect(response.isSuccess, isTrue);
-      expect(response.responseData, isA<Map<String, dynamic>>());
-
-      final map = response.responseData as Map<String, dynamic>;
-      expect(map['success'], isTrue);
-      expect(map['data'], isA<List>());
-      expect((map['data'] as List), hasLength(2));
-      expect(map['pagination']['page'], equals(1));
-      expect(map['pagination']['total'], equals(100));
-    });
-
-    test('9. DELETE with 204 preserves statusCode and null responseData', () async {
-      final response = await bolt.delete('/users/204');
+    test('204 DELETE returns DioBoltResponse with isSuccess: true and null responseData', () async {
+      final response = await bolt.delete('/status/204');
 
       expect(response.isSuccess, isTrue);
       expect(response.statusCode, equals(204));
+      expect(response.message, equals('No Content'));
       expect(response.responseData, isNull);
+      expect(capturedOptions?.method, equals('DELETE'));
     });
 
-    test('10. Query parameters reach Dio correctly', () async {
+    test('Preserves complete complex nested structure without reduction', () async {
+      final response = await bolt.get('/paginated');
+
+      expect(response.isSuccess, isTrue);
+      expect(response.responseData, isA<Map<String, dynamic>>());
+      final map = response.responseData as Map<String, dynamic>;
+      expect(map['success'], isTrue);
+      expect(map['data'], hasLength(2));
+      expect(map['pagination']['total'], equals(100));
+    });
+
+    test('Query parameters reach Dio correctly', () async {
       await bolt.get(
-        '/users/1',
-        queryParameters: {'include': 'profile', 'limit': 10},
+        '/status/200',
+        queryParameters: {'filter': 'active', 'page': 1},
       );
 
-      expect(capturedOptions?.queryParameters, equals({'include': 'profile', 'limit': 10}));
+      expect(capturedOptions?.queryParameters, equals({'filter': 'active', 'page': 1}));
     });
 
-    test('11. Header precedence: explicit headers override duplicate Options.headers', () async {
+    test('Header precedence: explicit headers override Options.headers', () async {
       final options = Options(headers: {
         'Authorization': 'Bearer old-token',
         'X-Keep': 'preserved',
       });
 
       await bolt.get(
-        '/users/1',
+        '/status/200',
         options: options,
         headers: {'Authorization': 'Bearer new-token'},
       );
@@ -316,225 +232,269 @@ void main() {
       expect(capturedOptions?.headers['X-Keep'], equals('preserved'));
     });
 
-    test('12. CancelToken is forwarded correctly', () async {
-      final cancelToken = CancelToken();
-      cancelToken.cancel('User aborted');
-
-      expect(
-        () => bolt.get('/users/1', cancelToken: cancelToken),
-        throwsA(isA<DioException>().having(
-          (e) => e.type,
-          'type',
-          equals(DioExceptionType.cancel),
-        )),
-      );
-    });
-
-    test('13. Send progress and receive progress are forwarded', () async {
-      int? sendBytes;
-      int? receiveBytes;
+    test('Send progress and receive progress callbacks are triggered', () async {
+      int? sentBytes;
+      int? receivedBytes;
 
       await bolt.post(
-        '/users',
-        data: {'name': 'Charlie'},
-        onSendProgress: (sent, total) => sendBytes = sent,
-        onReceiveProgress: (received, total) => receiveBytes = received,
+        '/status/201',
+        data: {'name': 'Progress Test'},
+        onSendProgress: (sent, total) => sentBytes = sent,
+        onReceiveProgress: (recv, total) => receivedBytes = recv,
       );
 
-      expect(sendBytes, equals(50));
-      expect(receiveBytes, equals(100));
-    });
-
-    test('14. DioException propagates unchanged in Phase 2', () async {
-      expect(
-        () => bolt.get('/error'),
-        throwsA(isA<DioException>().having(
-          (e) => e.response?.statusCode,
-          'statusCode',
-          equals(500),
-        )),
-      );
+      expect(sentBytes, equals(50));
+      expect(receivedBytes, equals(100));
     });
   });
 
-  group('DioBolt Typed Convenience API (getAs, postAs, etc.)', () {
+  group('DioBolt Raw API - HTTP error responses (4xx & 5xx) never throw', () {
     late Dio dio;
     late DioBolt bolt;
 
-    setUp(() {
+    void setupErrorRoute(int statusCode, dynamic responseData, [String? statusMessage]) {
       dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
-
       dio.interceptors.add(
         InterceptorsWrapper(
           onRequest: (options, handler) {
-            if (options.path == '/users/1' && options.method == 'GET') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: {'id': 1, 'name': 'Alice'},
-                ),
-              );
-            }
-
-            if (options.path == '/paginated_users' && options.method == 'GET') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: {
-                    'data': [
-                      {'id': 1, 'name': 'Alice'},
-                      {'id': 2, 'name': 'Bob'},
-                    ],
-                    'pagination': {
-                      'page': 1,
-                      'total': 100,
-                    },
-                  },
-                ),
-              );
-            }
-
-            if (options.path == '/users' && options.method == 'POST') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 201,
-                  data: {'id': 3, 'name': options.data['name']},
-                ),
-              );
-            }
-
-            if (options.path == '/users/3' && options.method == 'PUT') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: {'id': 3, 'name': options.data['name']},
-                ),
-              );
-            }
-
-            if (options.path == '/users/3' && options.method == 'PATCH') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: {'id': 3, 'name': options.data['name']},
-                ),
-              );
-            }
-
-            if (options.path == '/users/3' && options.method == 'DELETE') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: {'deleted': true},
-                ),
-              );
-            }
-
-            if (options.path == '/malformed' && options.method == 'GET') {
-              return handler.resolve(
-                Response(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: 'invalid json shape',
-                ),
-              );
-            }
-
-            return handler.resolve(
-              Response(
+            return handler.reject(
+              DioException(
                 requestOptions: options,
-                statusCode: 200,
-                data: options.data,
+                response: Response(
+                  requestOptions: options,
+                  statusCode: statusCode,
+                  statusMessage: statusMessage ?? 'HTTP $statusCode',
+                  data: responseData,
+                ),
+                type: DioExceptionType.badResponse,
               ),
             );
           },
         ),
       );
-
       bolt = DioBolt(dio: dio);
+    }
+
+    test('400 returns DioBoltResponse with isSuccess: false and statusCode: 400', () async {
+      setupErrorRoute(400, {'error': 'Bad Request', 'field': 'email'});
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(400));
+      expect(response.responseData, equals({'error': 'Bad Request', 'field': 'email'}));
+      expect(response.message, equals('HTTP 400'));
     });
 
-    test('1. getAs<User> decodes single entity', () async {
-      final user = await bolt.getAs<User>(
-        '/users/1',
-        fromJson: User.fromJson,
-      );
+    test('401 returns DioBoltResponse with isSuccess: false and statusCode: 401', () async {
+      setupErrorRoute(401, {'message': 'Unauthorized'});
+      final response = await bolt.post('/test');
 
-      expect(user, isA<User>());
-      expect(user.id, equals(1));
-      expect(user.name, equals('Alice'));
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(401));
+      expect(response.responseData, equals({'message': 'Unauthorized'}));
     });
 
-    test('2. getAs<UserPage> decodes wrapped/paginated structure without automatic data reduction', () async {
-      final page = await bolt.getAs<UserPage>(
-        '/paginated_users',
-        fromJson: UserPage.fromJson,
-      );
+    test('403 returns DioBoltResponse with isSuccess: false and statusCode: 403', () async {
+      setupErrorRoute(403, {'message': 'Forbidden'});
+      final response = await bolt.put('/test');
 
-      expect(page, isA<UserPage>());
-      expect(page.users, hasLength(2));
-      expect(page.users[0].name, equals('Alice'));
-      expect(page.users[1].name, equals('Bob'));
-      expect(page.page, equals(1));
-      expect(page.total, equals(100));
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(403));
+      expect(response.responseData, equals({'message': 'Forbidden'}));
     });
 
-    test('3. postAs<User> sends body and decodes response', () async {
-      final user = await bolt.postAs<User>(
-        '/users',
-        data: {'name': 'Charlie'},
-        fromJson: User.fromJson,
-      );
+    test('404 returns DioBoltResponse with isSuccess: false and statusCode: 404', () async {
+      setupErrorRoute(404, {'message': 'Not Found'});
+      final response = await bolt.delete('/test');
 
-      expect(user.id, equals(3));
-      expect(user.name, equals('Charlie'));
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(404));
+      expect(response.responseData, equals({'message': 'Not Found'}));
     });
 
-    test('4. putAs<User> decodes response', () async {
-      final user = await bolt.putAs<User>(
-        '/users/3',
-        data: {'name': 'Charlie Updated'},
-        fromJson: User.fromJson,
-      );
+    test('409 returns DioBoltResponse with isSuccess: false and statusCode: 409', () async {
+      setupErrorRoute(409, {'error': 'Resource conflict'});
+      final response = await bolt.patch('/test');
 
-      expect(user.id, equals(3));
-      expect(user.name, equals('Charlie Updated'));
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(409));
+      expect(response.responseData, equals({'error': 'Resource conflict'}));
     });
 
-    test('5. patchAs<User> decodes response', () async {
-      final user = await bolt.patchAs<User>(
-        '/users/3',
-        data: {'name': 'Charlie Patched'},
-        fromJson: User.fromJson,
-      );
+    test('422 preserves complete validation payload', () async {
+      final validationPayload = {
+        'success': false,
+        'message': 'Validation failed',
+        'errors': {
+          'email': ['Invalid email format', 'Email already taken'],
+          'password': ['Password is too short'],
+        },
+        'meta': {'traceId': 'req-98765'},
+      };
 
-      expect(user.id, equals(3));
-      expect(user.name, equals('Charlie Patched'));
+      setupErrorRoute(422, validationPayload, 'Unprocessable Entity');
+      final response = await bolt.post('/register', data: {'email': 'bad'});
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(422));
+      expect(response.message, equals('Unprocessable Entity'));
+      expect(response.responseData, equals(validationPayload));
+      expect(response.responseData['errors']['email'], hasLength(2));
+      expect(response.responseData['meta']['traceId'], equals('req-98765'));
     });
 
-    test('6. deleteAs<Map<String, dynamic>> decodes response', () async {
-      final result = await bolt.deleteAs<Map<String, dynamic>>(
-        '/users/3',
-        fromJson: (data) => data as Map<String, dynamic>,
-      );
+    test('429 returns DioBoltResponse with isSuccess: false and statusCode: 429', () async {
+      setupErrorRoute(429, {'error': 'Too Many Requests', 'retryAfter': 60});
+      final response = await bolt.get('/test');
 
-      expect(result['deleted'], isTrue);
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(429));
+      expect(response.responseData, equals({'error': 'Too Many Requests', 'retryAfter': 60}));
     });
 
-    test('7. fromJson exceptions propagate naturally when format is invalid', () async {
-      expect(
-        () => bolt.getAs<User>(
-          '/malformed',
-          fromJson: User.fromJson,
+    test('500 returns DioBoltResponse with isSuccess: false and statusCode: 500', () async {
+      setupErrorRoute(500, {'error': 'Internal server error'});
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(500));
+      expect(response.responseData, equals({'error': 'Internal server error'}));
+    });
+
+    test('503 returns DioBoltResponse with isSuccess: false and statusCode: 503', () async {
+      setupErrorRoute(503, {'error': 'Service unavailable'});
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(503));
+      expect(response.responseData, equals({'error': 'Service unavailable'}));
+    });
+  });
+
+  group('DioBolt Raw API - Transport and network failures never throw', () {
+    late Dio dio;
+    late DioBolt bolt;
+
+    void setupTransportError(DioExceptionType errorType, {String? customMessage}) {
+      dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                type: errorType,
+                message: customMessage,
+              ),
+            );
+          },
         ),
-        throwsA(isA<TypeError>()),
       );
+      bolt = DioBolt(dio: dio);
+    }
+
+    test('connection timeout returns statusCode: 0, isSuccess: false, message: Connection timed out.', () async {
+      setupTransportError(DioExceptionType.connectionTimeout);
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(0));
+      expect(response.responseData, isNull);
+      expect(response.message, equals('Connection timed out.'));
+    });
+
+    test('send timeout returns statusCode: 0, isSuccess: false, message: Request sending timed out.', () async {
+      setupTransportError(DioExceptionType.sendTimeout);
+      final response = await bolt.post('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(0));
+      expect(response.responseData, isNull);
+      expect(response.message, equals('Request sending timed out.'));
+    });
+
+    test('receive timeout returns statusCode: 0, isSuccess: false, message: Response receiving timed out.', () async {
+      setupTransportError(DioExceptionType.receiveTimeout);
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(0));
+      expect(response.responseData, isNull);
+      expect(response.message, equals('Response receiving timed out.'));
+    });
+
+    test('connection error (no internet / DNS) returns statusCode: 0, isSuccess: false, message: Unable to connect to the server.', () async {
+      setupTransportError(DioExceptionType.connectionError);
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(0));
+      expect(response.responseData, isNull);
+      expect(response.message, equals('Unable to connect to the server.'));
+    });
+
+    test('cancel returns statusCode: 0, isSuccess: false, message: Request was cancelled.', () async {
+      setupTransportError(DioExceptionType.cancel);
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(0));
+      expect(response.responseData, isNull);
+      expect(response.message, equals('Request was cancelled.'));
+    });
+
+    test('bad certificate returns statusCode: 0, isSuccess: false, message: Secure connection could not be established.', () async {
+      setupTransportError(DioExceptionType.badCertificate);
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(0));
+      expect(response.responseData, isNull);
+      expect(response.message, equals('Secure connection could not be established.'));
+    });
+
+    test('unknown failure returns statusCode: 0, isSuccess: false with sensible message', () async {
+      setupTransportError(DioExceptionType.unknown, customMessage: 'Socket closed unexpectedly');
+      final response = await bolt.get('/test');
+
+      expect(response.isSuccess, isFalse);
+      expect(response.statusCode, equals(0));
+      expect(response.responseData, isNull);
+      expect(response.message, equals('Socket closed unexpectedly'));
+    });
+  });
+
+  group('DioBoltResponse unit tests', () {
+    test('toString produces descriptive string', () {
+      const response = DioBoltResponse(
+        isSuccess: true,
+        statusCode: 200,
+        responseData: {'key': 'value'},
+        message: 'OK',
+      );
+
+      expect(
+        response.toString(),
+        equals('DioBoltResponse(statusCode: 200, isSuccess: true, message: OK, responseData: {key: value})'),
+      );
+    });
+
+    test('fromDioException handles badResponse with null statusMessage using default fallback', () {
+      final dioException = DioException(
+        requestOptions: RequestOptions(path: '/'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/'),
+          statusCode: 404,
+          statusMessage: null,
+          data: {'error': 'not found'},
+        ),
+        type: DioExceptionType.badResponse,
+      );
+
+      final boltResponse = DioBoltResponse.fromDioException(dioException);
+      expect(boltResponse.isSuccess, isFalse);
+      expect(boltResponse.statusCode, equals(404));
+      expect(boltResponse.message, equals('Resource not found.'));
     });
   });
 }

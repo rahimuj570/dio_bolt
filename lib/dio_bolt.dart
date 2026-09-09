@@ -1,4 +1,4 @@
-﻿/// Dio Bolt is a lightweight production networking layer built on top of Dio.
+/// Dio Bolt is a lightweight production networking layer built on top of Dio.
 /// It removes repetitive networking boilerplate while keeping Dio fully accessible.
 library;
 
