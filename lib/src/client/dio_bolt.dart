@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import '../logging/dio_bolt_log_config.dart';
+import '../logging/dio_bolt_logging_interceptor.dart';
 import '../model/dio_bolt_response.dart';
 
 /// A lightweight production networking layer built on top of [Dio].
@@ -13,8 +15,22 @@ class DioBolt {
 
   /// Creates a new [DioBolt] instance.
   ///
-  /// Optionally accepts an existing [dio] instance or custom [BaseOptions].
-  DioBolt({Dio? dio, BaseOptions? options}) : dio = dio ?? Dio(options);
+  /// Optionally accepts an existing [dio] instance, custom [BaseOptions],
+  /// or logging configuration ([enableLogging] and [logConfig]).
+  DioBolt({
+    Dio? dio,
+    BaseOptions? options,
+    bool enableLogging = false,
+    DioBoltLogConfig? logConfig,
+  }) : dio = dio ?? Dio(options) {
+    final effectiveConfig = logConfig ??
+        (enableLogging ? const DioBoltLogConfig(enabled: true) : null);
+    if (effectiveConfig != null && effectiveConfig.enabled) {
+      this.dio.interceptors.add(
+            DioBoltLoggingInterceptor(config: effectiveConfig),
+          );
+    }
+  }
 
   // ===========================================================================
   // Raw API (Universal non-throwing DioBoltResponse)
