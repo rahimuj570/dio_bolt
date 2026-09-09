@@ -1,0 +1,22 @@
+name: dio_bolt
+description: A lightweight production networking layer built on top of Dio that removes boilerplate while keeping Dio fully accessible.
+version: 0.0.1
+# repository: https://github.com/my_org/dio_bolt
+# issue_tracker: https://github.com/my_org/dio_bolt/issues
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  dio: ^5.11.1
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
+
+topics:
+  - dio
+  - networking
+  - http
+  - api
+  - rest
