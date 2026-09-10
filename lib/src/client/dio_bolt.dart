@@ -6,6 +6,9 @@ import '../auth/dio_bolt_request_retry.dart';
 import '../logging/dio_bolt_log_config.dart';
 import '../logging/dio_bolt_logging_interceptor.dart';
 import '../model/dio_bolt_response.dart';
+import '../retry/dio_bolt_retry_config.dart';
+import '../retry/dio_bolt_retry_interceptor.dart';
+import '../retry/dio_bolt_retry_policy.dart';
 
 /// A lightweight production networking layer built on top of [Dio].
 ///
@@ -20,16 +23,24 @@ class DioBolt {
   /// Creates a new [DioBolt] instance.
   ///
   /// Optionally accepts an existing [dio] instance, custom [BaseOptions],
-  /// authentication configuration [auth], or logging configuration ([enableLogging] and [logConfig]).
+  /// authentication configuration [auth], retry configuration [retryConfig],
+  /// or logging configuration ([enableLogging] and [logConfig]).
   DioBolt({
     Dio? dio,
     BaseOptions? options,
     DioBoltAuth? auth,
+    DioBoltRetryConfig? retryConfig,
     bool enableLogging = false,
     DioBoltLogConfig? logConfig,
   }) : dio = dio ?? Dio(options) {
     final effectiveLogConfig = logConfig ??
         (enableLogging ? const DioBoltLogConfig(enabled: true) : null);
+
+    DioBoltLoggingInterceptor? loggingInterceptor;
+    if (effectiveLogConfig != null && effectiveLogConfig.enabled) {
+      loggingInterceptor =
+          DioBoltLoggingInterceptor(config: effectiveLogConfig);
+    }
 
     // 1. Attach Authentication Interceptor (Index 0) if auth is provided
     if (auth != null) {
@@ -50,11 +61,29 @@ class DioBolt {
           );
     }
 
-    // 2. Attach Logging Interceptor (Index 1) if logging is enabled
-    if (effectiveLogConfig != null && effectiveLogConfig.enabled) {
+    // 2. Attach Retry Interceptor (Index 1) if retryConfig is provided
+    if (retryConfig != null) {
+      final policy = DioBoltRetryPolicy(config: retryConfig);
       this.dio.interceptors.add(
-            DioBoltLoggingInterceptor(config: effectiveLogConfig),
+            DioBoltRetryInterceptor(
+              policy: policy,
+              dio: this.dio,
+              onRetryLog: loggingInterceptor != null
+                  ? (opt, reason, delay, attempt) =>
+                      loggingInterceptor!.logRetry(
+                        options: opt,
+                        reason: reason,
+                        delay: delay,
+                        attempt: attempt,
+                      )
+                  : null,
+            ),
           );
+    }
+
+    // 3. Attach Logging Interceptor (Index 2) if logging is enabled
+    if (loggingInterceptor != null) {
+      this.dio.interceptors.add(loggingInterceptor);
     }
   }
 

@@ -14,6 +14,7 @@ class _Ansi {
   static const reset = '\x1B[0m';
   static const red = '\x1B[31m';
   static const green = '\x1B[32m';
+  static const yellow = '\x1B[33m';
   static const cyan = '\x1B[36m';
 }
 
@@ -365,5 +366,40 @@ class DioBoltLoggingInterceptor extends Interceptor {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
+
+  /// Logs a retry event to the console.
+  void logRetry({
+    required RequestOptions options,
+    required String reason,
+    required Duration delay,
+    required int attempt,
+  }) {
+    if (!config.enabled) return;
+
+    try {
+      final buffer = StringBuffer();
+      buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      buffer.writeln('🔄 DIO BOLT • RETRY [#$attempt]');
+      buffer.writeln('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      buffer.writeln('METHOD   : ${options.method.toUpperCase()}');
+      buffer.writeln('URL      : ${options.uri}');
+      buffer.writeln('REASON   : $reason');
+      buffer.writeln('DELAY    : ${_formatDuration(delay)}');
+      buffer.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      final colored = _applyColor(buffer.toString(), _Ansi.yellow);
+      _print(colored);
+    } catch (_) {
+      // Zero-crash guarantee
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    if (duration.inMilliseconds < 1000) {
+      return '${duration.inMilliseconds}ms';
+    }
+    final seconds = (duration.inMilliseconds / 1000).toStringAsFixed(1);
+    return '${seconds}s';
   }
 }

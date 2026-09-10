@@ -18,3 +18,5 @@ export 'src/client/dio_bolt.dart';
 export 'src/logging/dio_bolt_log_config.dart';
 export 'src/logging/dio_bolt_logging_interceptor.dart';
 export 'src/model/dio_bolt_response.dart';
+export 'src/retry/dio_bolt_retry_config.dart';
+export 'src/retry/dio_bolt_retry_options.dart';
