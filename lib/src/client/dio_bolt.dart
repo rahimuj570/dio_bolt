@@ -1,4 +1,8 @@
 import 'package:dio/dio.dart';
+import '../auth/dio_bolt_auth.dart';
+import '../auth/dio_bolt_auth_interceptor.dart';
+import '../auth/dio_bolt_refresh_manager.dart';
+import '../auth/dio_bolt_request_retry.dart';
 import '../logging/dio_bolt_log_config.dart';
 import '../logging/dio_bolt_logging_interceptor.dart';
 import '../model/dio_bolt_response.dart';
@@ -16,18 +20,40 @@ class DioBolt {
   /// Creates a new [DioBolt] instance.
   ///
   /// Optionally accepts an existing [dio] instance, custom [BaseOptions],
-  /// or logging configuration ([enableLogging] and [logConfig]).
+  /// authentication configuration [auth], or logging configuration ([enableLogging] and [logConfig]).
   DioBolt({
     Dio? dio,
     BaseOptions? options,
+    DioBoltAuth? auth,
     bool enableLogging = false,
     DioBoltLogConfig? logConfig,
   }) : dio = dio ?? Dio(options) {
-    final effectiveConfig = logConfig ??
+    final effectiveLogConfig = logConfig ??
         (enableLogging ? const DioBoltLogConfig(enabled: true) : null);
-    if (effectiveConfig != null && effectiveConfig.enabled) {
+
+    // 1. Attach Authentication Interceptor (Index 0) if auth is provided
+    if (auth != null) {
+      final refreshManager = DioBoltRefreshManager.fromDio(
+        auth: auth,
+        mainDio: this.dio,
+        logConfig: effectiveLogConfig,
+      );
+      final retryHandler = DioBoltRequestRetry(
+        dio: this.dio,
+        auth: auth,
+      );
       this.dio.interceptors.add(
-            DioBoltLoggingInterceptor(config: effectiveConfig),
+            DioBoltAuthInterceptor(
+              refreshManager: refreshManager,
+              retryHandler: retryHandler,
+            ),
+          );
+    }
+
+    // 2. Attach Logging Interceptor (Index 1) if logging is enabled
+    if (effectiveLogConfig != null && effectiveLogConfig.enabled) {
+      this.dio.interceptors.add(
+            DioBoltLoggingInterceptor(config: effectiveLogConfig),
           );
     }
   }

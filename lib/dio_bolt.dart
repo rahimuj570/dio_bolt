@@ -12,6 +12,8 @@ export 'package:dio/dio.dart'
         Options,
         ProgressCallback,
         Response;
+export 'src/auth/dio_bolt_auth.dart';
+export 'src/auth/dio_bolt_auth_options.dart';
 export 'src/client/dio_bolt.dart';
 export 'src/logging/dio_bolt_log_config.dart';
 export 'src/logging/dio_bolt_logging_interceptor.dart';
