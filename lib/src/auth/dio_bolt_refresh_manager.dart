@@ -17,10 +17,7 @@ class DioBoltRefreshManager {
   Future<String?>? _activeRefreshFuture;
 
   /// Creates a [DioBoltRefreshManager].
-  DioBoltRefreshManager({
-    required this.auth,
-    required this.refreshClient,
-  });
+  DioBoltRefreshManager({required this.auth, required this.refreshClient});
 
   /// Factory constructor that builds an isolated refresh [Dio] instance
   /// copying appropriate baseline networking options without recursive interceptors.
@@ -47,15 +44,10 @@ class DioBoltRefreshManager {
 
     // Attach logger if logging is active, but NEVER attach DioBoltAuthInterceptor
     if (logConfig != null && logConfig.enabled) {
-      refreshDio.interceptors.add(
-        DioBoltLoggingInterceptor(config: logConfig),
-      );
+      refreshDio.interceptors.add(DioBoltLoggingInterceptor(config: logConfig));
     }
 
-    return DioBoltRefreshManager(
-      auth: auth,
-      refreshClient: refreshDio,
-    );
+    return DioBoltRefreshManager(auth: auth, refreshClient: refreshDio);
   }
 
   /// Executes or joins an ongoing single-flight token refresh operation.

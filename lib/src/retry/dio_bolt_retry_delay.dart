@@ -35,7 +35,8 @@ class DioBoltRetryDelay {
       if (retryAfterHeader != null && retryAfterHeader.trim().isNotEmpty) {
         final serverDelay = _parseRetryAfter(retryAfterHeader.trim());
         if (serverDelay != null && serverDelay > Duration.zero) {
-          if (config.clampRetryAfterToMaxDelay && serverDelay > config.maxDelay) {
+          if (config.clampRetryAfterToMaxDelay &&
+              serverDelay > config.maxDelay) {
             return config.maxDelay;
           }
           return serverDelay;
@@ -45,7 +46,8 @@ class DioBoltRetryDelay {
 
     // 3. Exponential backoff calculation: initialDelay * (multiplier ^ (attempt - 1))
     final multiplier = pow(config.backoffMultiplier, max(0, attempt - 1));
-    final calculatedMs = (config.initialDelay.inMilliseconds * multiplier).round();
+    final calculatedMs = (config.initialDelay.inMilliseconds * multiplier)
+        .round();
     var delay = Duration(milliseconds: calculatedMs);
 
     // 4. Clamp to maxDelay

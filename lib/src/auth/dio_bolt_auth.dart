@@ -18,9 +18,8 @@ typedef RefreshTokenRunner = FutureOr<String?> Function(Dio refreshClient);
 typedef TokenStorageSaver = FutureOr<void> Function(String newToken);
 
 /// Callback invoked when token refresh fails permanently (e.g. refresh token expired).
-typedef RefreshFailureHandler = FutureOr<void> Function(
-  DioBoltResponse originalResponse,
-);
+typedef RefreshFailureHandler =
+    FutureOr<void> Function(DioBoltResponse originalResponse);
 
 /// Public configuration for automatic token injection and 401 token refresh.
 class DioBoltAuth {

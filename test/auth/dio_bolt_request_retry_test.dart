@@ -31,7 +31,9 @@ void main() {
       expect(retryHandler.isReplayable(true), isTrue);
       expect(retryHandler.isReplayable(Uint8List.fromList([1, 2, 3])), isTrue);
       expect(retryHandler.isReplayable([1, 2, 3]), isTrue);
-      expect(retryHandler.isReplayable(FormData.fromMap({'a': 'b'})), isTrue);
+
+      // Generic arbitrary FormData is NOT replayable
+      expect(retryHandler.isReplayable(FormData.fromMap({'a': 'b'})), isFalse);
 
       // Unsafe payload: Stream
       expect(retryHandler.isReplayable(Stream<List<int>>.empty()), isFalse);
@@ -40,56 +42,68 @@ void main() {
       expect(retryHandler.isReplayable(Object()), isFalse);
     });
 
-    test('prepareRetryOptions sets retry marker, replaces authorization header, and clones FormData', () {
-      final originalFormData = FormData.fromMap({'field': 'val'});
-      final original = RequestOptions(
-        path: '/items',
-        headers: {
-          'Authorization': 'Bearer old-token',
-          'X-Custom': '123',
-        },
-        extra: {'existingExtra': true},
-        queryParameters: {'q': 'dart'},
-        contentType: 'application/json',
-        data: originalFormData,
-      );
+    test(
+      'prepareRetryOptions sets retry marker, replaces authorization header, and clones FormData',
+      () async {
+        final originalFormData = FormData.fromMap({'field': 'val'});
+        final original = RequestOptions(
+          path: '/items',
+          headers: {'Authorization': 'Bearer old-token', 'X-Custom': '123'},
+          extra: {'existingExtra': true},
+          queryParameters: {'q': 'dart'},
+          contentType: 'application/json',
+          data: originalFormData,
+        );
 
-      final prepared = retryHandler.prepareRetryOptions(original, 'new-token-abc');
+        final prepared = await retryHandler.prepareRetryOptions(
+          original,
+          'new-token-abc',
+        );
 
-      // 1. Retry marker applied
-      expect(prepared.extra[kDioBoltAuthRetriedKey], isTrue);
-      expect(prepared.extra['existingExtra'], isTrue);
+        // 1. Retry marker applied
+        expect(prepared.extra[kDioBoltAuthRetriedKey], isTrue);
+        expect(prepared.extra['existingExtra'], isTrue);
 
-      // 2. Authorization updated to new token
-      expect(prepared.headers['Authorization'], equals('Bearer new-token-abc'));
-      expect(prepared.headers['X-Custom'], equals('123'));
+        // 2. Authorization updated to new token
+        expect(
+          prepared.headers['Authorization'],
+          equals('Bearer new-token-abc'),
+        );
+        expect(prepared.headers['X-Custom'], equals('123'));
 
-      // 3. Options preserved
-      expect(prepared.queryParameters, equals({'q': 'dart'}));
-      expect(prepared.contentType, equals('application/json'));
+        // 3. Options preserved
+        expect(prepared.queryParameters, equals({'q': 'dart'}));
+        expect(prepared.contentType, equals('application/json'));
 
-      // 4. FormData cloned (different instance)
-      expect(prepared.data, isA<FormData>());
-      expect(prepared.data, isNot(same(originalFormData)));
-    });
+        // 4. FormData cloned (different instance)
+        expect(prepared.data, isA<FormData>());
+        expect(prepared.data, isNot(same(originalFormData)));
+      },
+    );
 
-    test('prepareRetryOptions respects custom headerKey and tokenHeaderBuilder', () {
-      final customAuth = DioBoltAuth(
-        getAccessToken: () => 't',
-        refreshToken: (_) => 't',
-        headerKey: 'X-API-KEY',
-        tokenHeaderBuilder: (token) => 'Custom $token',
-      );
-      final customRetry = DioBoltRequestRetry(dio: dio, auth: customAuth);
+    test(
+      'prepareRetryOptions respects custom headerKey and tokenHeaderBuilder',
+      () async {
+        final customAuth = DioBoltAuth(
+          getAccessToken: () => 't',
+          refreshToken: (_) => 't',
+          headerKey: 'X-API-KEY',
+          tokenHeaderBuilder: (token) => 'Custom $token',
+        );
+        final customRetry = DioBoltRequestRetry(dio: dio, auth: customAuth);
 
-      final original = RequestOptions(
-        path: '/test',
-        headers: {'X-API-KEY': 'old-key'},
-      );
+        final original = RequestOptions(
+          path: '/test',
+          headers: {'X-API-KEY': 'old-key'},
+        );
 
-      final prepared = customRetry.prepareRetryOptions(original, 'secret-123');
+        final prepared = await customRetry.prepareRetryOptions(
+          original,
+          'secret-123',
+        );
 
-      expect(prepared.headers['X-API-KEY'], equals('Custom secret-123'));
-    });
+        expect(prepared.headers['X-API-KEY'], equals('Custom secret-123'));
+      },
+    );
   });
 }

@@ -32,7 +32,10 @@ class DioBoltAuthInterceptor extends Interceptor {
     }
 
     // 2. Case-insensitive check for existing explicit Authorization header
-    final explicitKey = _findHeaderKey(options.headers, refreshManager.auth.headerKey);
+    final explicitKey = _findHeaderKey(
+      options.headers,
+      refreshManager.auth.headerKey,
+    );
     if (explicitKey != null) {
       // Explicit header supplied by caller; preserve it without overwriting
       return handler.next(options);
@@ -55,10 +58,7 @@ class DioBoltAuthInterceptor extends Interceptor {
   }
 
   @override
-  void onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) async {
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
     final response = err.response;
     final options = err.requestOptions;
 
@@ -78,7 +78,7 @@ class DioBoltAuthInterceptor extends Interceptor {
     }
 
     // 4. Check payload replayability via retry component
-    if (!retryHandler.isReplayable(options.data)) {
+    if (!retryHandler.isReplayable(options.data, options)) {
       return handler.next(err);
     }
 

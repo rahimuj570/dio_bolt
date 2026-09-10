@@ -7,25 +7,27 @@ export 'dio_bolt_retry_options.dart';
 ///
 /// Invoked after basic safety validations (e.g. body replayability).
 /// Return `true` to allow retry, or `false` to abort retry.
-typedef RetryEvaluator = FutureOr<bool> Function(
-  DioException error,
-  RequestOptions options,
-  int attempt,
-);
+typedef RetryEvaluator =
+    FutureOr<bool> Function(
+      DioException error,
+      RequestOptions options,
+      int attempt,
+    );
 
 /// Custom delay calculation function.
 ///
 /// When provided, this calculator takes full precedence over default delay computation,
 /// including 429 `Retry-After` parsing and exponential backoff curves.
 /// Useful for injecting deterministic delays in tests or implementing custom backoff curves.
-typedef RetryDelayCalculator = Duration Function(
-  int attempt,
-  Duration initialDelay,
-  Duration maxDelay,
-  double backoffMultiplier,
-  bool useJitter,
-  DioException? error,
-);
+typedef RetryDelayCalculator =
+    Duration Function(
+      int attempt,
+      Duration initialDelay,
+      Duration maxDelay,
+      double backoffMultiplier,
+      bool useJitter,
+      DioException? error,
+    );
 
 /// Public configuration for automatic network and server failure retries.
 class DioBoltRetryConfig {

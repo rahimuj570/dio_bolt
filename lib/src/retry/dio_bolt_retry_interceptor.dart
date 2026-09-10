@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import '../transfer/dio_bolt_file.dart';
+import '../transfer/dio_bolt_transfer_utils.dart';
 import 'dio_bolt_retry_delay.dart';
 import 'dio_bolt_retry_options.dart';
 import 'dio_bolt_retry_policy.dart';
 
 /// Callback invoked to log a retry event.
-typedef RetryLogger = void Function(
-  RequestOptions options,
-  String reason,
-  Duration delay,
-  int attempt,
-);
+typedef RetryLogger =
+    void Function(
+      RequestOptions options,
+      String reason,
+      Duration delay,
+      int attempt,
+    );
 
 /// Interceptor managing network retry lifecycle, backoff delay,
 /// cancellation unblocking, and retry execution.
@@ -36,10 +39,7 @@ class DioBoltRetryInterceptor extends Interceptor {
   }) : delayCalculator = delayCalculator ?? DioBoltRetryDelay();
 
   @override
-  void onError(
-    DioException err,
-    ErrorInterceptorHandler handler,
-  ) async {
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
     final options = err.requestOptions;
     final currentAttempt = (options.extra[kDioBoltRetryCountKey] as int?) ?? 0;
 
@@ -93,19 +93,24 @@ class DioBoltRetryInterceptor extends Interceptor {
       }
     }
 
-    // 5. Prepare retried RequestOptions with updated retry count and cloned payload
+    // 5. Prepare retried RequestOptions with updated retry count and cloned payload / fresh FormData
     final retryExtra = Map<String, dynamic>.from(options.extra);
     retryExtra[kDioBoltRetryCountKey] = nextAttempt;
 
     dynamic retryData = options.data;
-    if (retryData is FormData) {
+    final uploadFiles = options.extra[kDioBoltUploadFilesKey];
+    if (uploadFiles is List<DioBoltFile>) {
+      final uploadFields =
+          options.extra[kDioBoltUploadFieldsKey] as Map<String, dynamic>?;
+      retryData = await DioBoltTransferUtils.createFormData(
+        files: uploadFiles,
+        fields: uploadFields,
+      );
+    } else if (retryData is FormData) {
       retryData = retryData.clone();
     }
 
-    final retryOptions = options.copyWith(
-      extra: retryExtra,
-      data: retryData,
-    );
+    final retryOptions = options.copyWith(extra: retryExtra, data: retryData);
 
     // 6. Execute retry request
     try {

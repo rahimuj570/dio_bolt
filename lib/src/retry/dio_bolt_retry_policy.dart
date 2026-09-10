@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import '../transfer/dio_bolt_file.dart';
+import '../transfer/dio_bolt_transfer_utils.dart';
 import 'dio_bolt_retry_config.dart';
 
 /// Pure decision engine that evaluates whether a failed request is eligible for retry.
@@ -23,7 +25,7 @@ class DioBoltRetryPolicy {
     }
 
     // 2. Request body MUST be replayable (cannot be bypassed by overrides)
-    if (!isReplayable(options.data)) {
+    if (!isReplayable(options.data, options)) {
       return false;
     }
 
@@ -81,10 +83,16 @@ class DioBoltRetryPolicy {
   /// - `String`, `num`, `bool`
   /// - `Map`, `List`
   /// - `Uint8List`, `List<int>` byte buffers (non-Stream)
-  /// - Safely replayable `FormData`
+  /// - Safely replayable `FormData` or upload file lists
   ///
   /// Rejects `Stream`, one-shot stream data, and all unknown/custom body types.
-  bool isReplayable(dynamic data) {
+  bool isReplayable(dynamic data, [RequestOptions? options]) {
+    if (options != null) {
+      final uploadFiles = options.extra[kDioBoltUploadFilesKey];
+      if (uploadFiles is List<DioBoltFile>) {
+        return DioBoltTransferUtils.areFilesReplayable(uploadFiles);
+      }
+    }
     if (data == null) return true;
     if (data is String || data is num || data is bool) {
       return true;
@@ -95,27 +103,11 @@ class DioBoltRetryPolicy {
     if (data is Uint8List || (data is List<int> && data is! Stream)) {
       return true;
     }
+    // Generic arbitrary FormData is NOT assumed replayable
     if (data is FormData) {
-      return _isFormDataReplayable(data);
+      return false;
     }
     // Any Stream or unknown/custom body object is strictly non-replayable
     return false;
-  }
-
-  /// Inspects [FormData] contents to ensure no one-shot or finalized streams exist.
-  bool _isFormDataReplayable(FormData formData) {
-    for (final entry in formData.files) {
-      final file = entry.value;
-      // If the file is already finalized, its stream cannot be read again
-      if (file.isFinalized) {
-        return false;
-      }
-      // If the file is backed purely by a Stream without length/bytes or file path,
-      // it cannot be re-read safely.
-      if (file.length == 0 && file.filename == null) {
-        return false;
-      }
-    }
-    return true;
   }
 }

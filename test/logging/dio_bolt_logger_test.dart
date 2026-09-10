@@ -74,25 +74,31 @@ void main() {
       );
     });
 
-    test('1. GET request logs method, url, path, query params, headers, and payload: none', () async {
-      await bolt.get(
-        '/users',
-        queryParameters: {'page': 1, 'limit': 20},
-        headers: {'X-Custom-Header': 'CustomValue'},
-      );
+    test(
+      '1. GET request logs method, url, path, query params, headers, and payload: none',
+      () async {
+        await bolt.get(
+          '/users',
+          queryParameters: {'page': 1, 'limit': 20},
+          headers: {'X-Custom-Header': 'CustomValue'},
+        );
 
-      expect(logs, hasLength(2)); // [0] request, [1] response
-      final requestLog = logs[0];
+        expect(logs, hasLength(2)); // [0] request, [1] response
+        final requestLog = logs[0];
 
-      expect(requestLog, contains('🚀 DIO BOLT • REQUEST [#1]'));
-      expect(requestLog, contains('METHOD   : GET'));
-      expect(requestLog, contains('URL      : https://api.example.com/users?page=1&limit=20'));
-      expect(requestLog, contains('PATH     : /users'));
-      expect(requestLog, contains('"page": 1'));
-      expect(requestLog, contains('"limit": 20'));
-      expect(requestLog, contains('"X-Custom-Header": "CustomValue"'));
-      expect(requestLog, contains('PAYLOAD  : none'));
-    });
+        expect(requestLog, contains('🚀 DIO BOLT • REQUEST [#1]'));
+        expect(requestLog, contains('METHOD   : GET'));
+        expect(
+          requestLog,
+          contains('URL      : https://api.example.com/users?page=1&limit=20'),
+        );
+        expect(requestLog, contains('PATH     : /users'));
+        expect(requestLog, contains('"page": 1'));
+        expect(requestLog, contains('"limit": 20'));
+        expect(requestLog, contains('"X-Custom-Header": "CustomValue"'));
+        expect(requestLog, contains('PAYLOAD  : none'));
+      },
+    );
 
     test('2. POST request with JSON payload logs complete payload', () async {
       await bolt.post(
@@ -119,14 +125,25 @@ void main() {
     late Dio dio;
     late DioBolt bolt;
 
-    void setupMockAdapter(int statusCode, String statusMessage, dynamic responseData) {
+    void setupMockAdapter(
+      int statusCode,
+      String statusMessage,
+      dynamic responseData,
+    ) {
       logs = [];
       dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
       dio.httpClientAdapter = MockAdapter((options) async {
         if (statusCode == 204 || responseData == null) {
-          return emptyResponseBody(statusCode: statusCode, statusMessage: statusMessage);
+          return emptyResponseBody(
+            statusCode: statusCode,
+            statusMessage: statusMessage,
+          );
         }
-        return jsonResponseBody(responseData, statusCode: statusCode, statusMessage: statusMessage);
+        return jsonResponseBody(
+          responseData,
+          statusCode: statusCode,
+          statusMessage: statusMessage,
+        );
       });
 
       bolt = DioBolt(
@@ -193,7 +210,11 @@ void main() {
       logs = [];
       dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
       dio.httpClientAdapter = MockAdapter((options) async {
-        return jsonResponseBody(data, statusCode: statusCode, statusMessage: statusMessage);
+        return jsonResponseBody(
+          data,
+          statusCode: statusCode,
+          statusMessage: statusMessage,
+        );
       });
 
       bolt = DioBolt(
@@ -207,7 +228,10 @@ void main() {
     }
 
     test('401 Unauthorized produces RED HTTP response log', () async {
-      setupErrorAdapter(401, 'Unauthorized', {'success': false, 'message': 'Token expired'});
+      setupErrorAdapter(401, 'Unauthorized', {
+        'success': false,
+        'message': 'Token expired',
+      });
 
       final response = await bolt.get('/protected');
 
@@ -223,30 +247,35 @@ void main() {
       expect(errorLog, contains('\x1B[0m')); // Reset color code
     });
 
-    test('422 Unprocessable Entity logs complete validation errors in RED', () async {
-      final validationData = {
-        'success': false,
-        'message': 'Validation failed',
-        'errors': {
-          'email': ['Email format is invalid'],
-          'password': ['Password is too short'],
-        },
-      };
-      setupErrorAdapter(422, 'Unprocessable Entity', validationData);
+    test(
+      '422 Unprocessable Entity logs complete validation errors in RED',
+      () async {
+        final validationData = {
+          'success': false,
+          'message': 'Validation failed',
+          'errors': {
+            'email': ['Email format is invalid'],
+            'password': ['Password is too short'],
+          },
+        };
+        setupErrorAdapter(422, 'Unprocessable Entity', validationData);
 
-      await bolt.post('/register', data: {});
+        await bolt.post('/register', data: {});
 
-      expect(logs, hasLength(2));
-      final errorLog = logs[1];
-      expect(errorLog, contains('\x1B[31m')); // Red color code
-      expect(errorLog, contains('❌ DIO BOLT • RESPONSE [#1]'));
-      expect(errorLog, contains('STATUS        : 422 Unprocessable Entity'));
-      expect(errorLog, contains('"Email format is invalid"'));
-      expect(errorLog, contains('"Password is too short"'));
-    });
+        expect(logs, hasLength(2));
+        final errorLog = logs[1];
+        expect(errorLog, contains('\x1B[31m')); // Red color code
+        expect(errorLog, contains('❌ DIO BOLT • RESPONSE [#1]'));
+        expect(errorLog, contains('STATUS        : 422 Unprocessable Entity'));
+        expect(errorLog, contains('"Email format is invalid"'));
+        expect(errorLog, contains('"Password is too short"'));
+      },
+    );
 
     test('500 Server Error logs server error in RED', () async {
-      setupErrorAdapter(500, 'Internal Server Error', {'error': 'Database timeout'});
+      setupErrorAdapter(500, 'Internal Server Error', {
+        'error': 'Database timeout',
+      });
 
       await bolt.get('/users');
 
@@ -263,7 +292,10 @@ void main() {
     late Dio dio;
     late DioBolt bolt;
 
-    void setupTransportErrorAdapter(DioExceptionType errorType, {String? message}) {
+    void setupTransportErrorAdapter(
+      DioExceptionType errorType, {
+      String? message,
+    }) {
       logs = [];
       dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
       dio.httpClientAdapter = MockAdapter((options) async {
@@ -284,34 +316,43 @@ void main() {
       );
     }
 
-    test('connectionTimeout produces RED network error log without invented status code', () async {
-      setupTransportErrorAdapter(DioExceptionType.connectionTimeout);
+    test(
+      'connectionTimeout produces RED network error log without invented status code',
+      () async {
+        setupTransportErrorAdapter(DioExceptionType.connectionTimeout);
 
-      final response = await bolt.get('/test');
+        final response = await bolt.get('/test');
 
-      expect(response.isSuccess, isFalse);
-      expect(response.statusCode, equals(0));
-      expect(logs, hasLength(2));
+        expect(response.isSuccess, isFalse);
+        expect(response.statusCode, equals(0));
+        expect(logs, hasLength(2));
 
-      final errorLog = logs[1];
-      expect(errorLog, contains('\x1B[31m'));
-      expect(errorLog, contains('❌ DIO BOLT • NETWORK ERROR [#1]'));
-      expect(errorLog, contains('ERROR TYPE : connectionTimeout'));
-      expect(errorLog, contains('STATUS     : No HTTP response'));
-      expect(errorLog, contains('MESSAGE    : Connection timed out'));
-    });
+        final errorLog = logs[1];
+        expect(errorLog, contains('\x1B[31m'));
+        expect(errorLog, contains('❌ DIO BOLT • NETWORK ERROR [#1]'));
+        expect(errorLog, contains('ERROR TYPE : connectionTimeout'));
+        expect(errorLog, contains('STATUS     : No HTTP response'));
+        expect(errorLog, contains('MESSAGE    : Connection timed out'));
+      },
+    );
 
-    test('connectionError (no internet) produces RED network error log', () async {
-      setupTransportErrorAdapter(DioExceptionType.connectionError);
+    test(
+      'connectionError (no internet) produces RED network error log',
+      () async {
+        setupTransportErrorAdapter(DioExceptionType.connectionError);
 
-      await bolt.get('/test');
+        await bolt.get('/test');
 
-      expect(logs, hasLength(2));
-      final errorLog = logs[1];
-      expect(errorLog, contains('❌ DIO BOLT • NETWORK ERROR [#1]'));
-      expect(errorLog, contains('ERROR TYPE : connectionError'));
-      expect(errorLog, contains('MESSAGE    : Unable to connect to the server'));
-    });
+        expect(logs, hasLength(2));
+        final errorLog = logs[1];
+        expect(errorLog, contains('❌ DIO BOLT • NETWORK ERROR [#1]'));
+        expect(errorLog, contains('ERROR TYPE : connectionError'));
+        expect(
+          errorLog,
+          contains('MESSAGE    : Unable to connect to the server'),
+        );
+      },
+    );
 
     test('cancel produces RED network error log', () async {
       setupTransportErrorAdapter(DioExceptionType.cancel);
@@ -334,7 +375,10 @@ void main() {
       final errorLog = logs[1];
       expect(errorLog, contains('❌ DIO BOLT • NETWORK ERROR [#1]'));
       expect(errorLog, contains('ERROR TYPE : badCertificate'));
-      expect(errorLog, contains('MESSAGE    : Secure connection could not be established'));
+      expect(
+        errorLog,
+        contains('MESSAGE    : Secure connection could not be established'),
+      );
     });
   });
 
@@ -362,43 +406,52 @@ void main() {
       );
     });
 
-    test('Redacts sensitive headers and payload fields while preserving actual request options', () async {
-      await bolt.post(
-        '/login',
-        headers: {
-          'Authorization': 'Bearer secret-jwt-token-12345',
-          'X-Api-Key': 'my-super-secret-api-key',
-          'X-Public-Header': 'public-value',
-        },
-        data: {
-          'username': 'rahim',
-          'password': 'SuperSecretPassword123!',
-          'refresh_token': 'secret-refresh-token',
-        },
-      );
+    test(
+      'Redacts sensitive headers and payload fields while preserving actual request options',
+      () async {
+        await bolt.post(
+          '/login',
+          headers: {
+            'Authorization': 'Bearer secret-jwt-token-12345',
+            'X-Api-Key': 'my-super-secret-api-key',
+            'X-Public-Header': 'public-value',
+          },
+          data: {
+            'username': 'rahim',
+            'password': 'SuperSecretPassword123!',
+            'refresh_token': 'secret-refresh-token',
+          },
+        );
 
-      final requestLog = logs[0];
+        final requestLog = logs[0];
 
-      // Console log must have [REDACTED]
-      expect(requestLog, contains('"Authorization": "[REDACTED]"'));
-      expect(requestLog, contains('"X-Api-Key": "[REDACTED]"'));
-      expect(requestLog, contains('"X-Public-Header": "public-value"'));
-      expect(requestLog, contains('"password": "[REDACTED]"'));
-      expect(requestLog, contains('"refresh_token": "[REDACTED]"'));
-      expect(requestLog, contains('"username": "rahim"'));
+        // Console log must have [REDACTED]
+        expect(requestLog, contains('"Authorization": "[REDACTED]"'));
+        expect(requestLog, contains('"X-Api-Key": "[REDACTED]"'));
+        expect(requestLog, contains('"X-Public-Header": "public-value"'));
+        expect(requestLog, contains('"password": "[REDACTED]"'));
+        expect(requestLog, contains('"refresh_token": "[REDACTED]"'));
+        expect(requestLog, contains('"username": "rahim"'));
 
-      // Secrets must NOT leak into the log
-      expect(requestLog, isNot(contains('secret-jwt-token-12345')));
-      expect(requestLog, isNot(contains('my-super-secret-api-key')));
-      expect(requestLog, isNot(contains('SuperSecretPassword123!')));
-      expect(requestLog, isNot(contains('secret-refresh-token')));
+        // Secrets must NOT leak into the log
+        expect(requestLog, isNot(contains('secret-jwt-token-12345')));
+        expect(requestLog, isNot(contains('my-super-secret-api-key')));
+        expect(requestLog, isNot(contains('SuperSecretPassword123!')));
+        expect(requestLog, isNot(contains('secret-refresh-token')));
 
-      // Actual network request options must NOT be mutated
-      expect(capturedOptions.headers['Authorization'], equals('Bearer secret-jwt-token-12345'));
-      expect(capturedOptions.headers['X-Api-Key'], equals('my-super-secret-api-key'));
-      final actualData = capturedOptions.data as Map<String, dynamic>;
-      expect(actualData['password'], equals('SuperSecretPassword123!'));
-    });
+        // Actual network request options must NOT be mutated
+        expect(
+          capturedOptions.headers['Authorization'],
+          equals('Bearer secret-jwt-token-12345'),
+        );
+        expect(
+          capturedOptions.headers['X-Api-Key'],
+          equals('my-super-secret-api-key'),
+        );
+        final actualData = capturedOptions.data as Map<String, dynamic>;
+        expect(actualData['password'], equals('SuperSecretPassword123!'));
+      },
+    );
   });
 
   group('DioBolt Logging - Special Payloads & Safety', () {
@@ -423,24 +476,44 @@ void main() {
       );
     });
 
-    test('Handles FormData and MultipartFile safely without dumping binary content', () async {
-      final formData = FormData.fromMap({
-        'name': 'Rahim',
-        'password': 'secret_password',
-        'avatar': MultipartFile.fromBytes([0, 1, 2, 3], filename: 'avatar.png'),
-      });
+    test(
+      'Handles FormData and MultipartFile safely without dumping binary content',
+      () async {
+        final formData = FormData.fromMap({
+          'name': 'Rahim',
+          'password': 'secret_password',
+          'avatar': MultipartFile.fromBytes([
+            0,
+            1,
+            2,
+            3,
+          ], filename: 'avatar.png'),
+        });
 
-      await bolt.post('/upload', data: formData);
+        await bolt.post('/upload', data: formData);
 
-      final requestLog = logs[0];
-      expect(requestLog, contains('FormData'));
-      expect(requestLog, contains('name: Rahim'));
-      expect(requestLog, contains('password: [REDACTED]'));
-      expect(requestLog, contains('avatar: MultipartFile [filename: avatar.png, length: 4 bytes'));
-    });
+        final requestLog = logs[0];
+        expect(requestLog, contains('FormData'));
+        expect(requestLog, contains('name: Rahim'));
+        expect(requestLog, contains('password: [REDACTED]'));
+        expect(
+          requestLog,
+          contains(
+            'avatar: MultipartFile [filename: avatar.png, length: 4 bytes',
+          ),
+        );
+      },
+    );
 
     test('Handles binary request and response data safely', () async {
-      final binaryBytes = Uint8List.fromList([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A]);
+      final binaryBytes = Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+      ]);
 
       dio.httpClientAdapter = MockAdapter((options) async {
         return ResponseBody(
@@ -467,22 +540,28 @@ void main() {
       expect(responseLog, contains('<binary data: 6 B>'));
     });
 
-    test('Zero-crash guarantee: Logging formatting or printer errors do not crash the request', () async {
-      final crashingBolt = DioBolt(
-        dio: dio,
-        logConfig: DioBoltLogConfig(
-          enabled: true,
-          logPrint: (msg) => throw Exception('Printer crashed unexpectedly'),
-        ),
-      );
+    test(
+      'Zero-crash guarantee: Logging formatting or printer errors do not crash the request',
+      () async {
+        final crashingBolt = DioBolt(
+          dio: dio,
+          logConfig: DioBoltLogConfig(
+            enabled: true,
+            logPrint: (msg) => throw Exception('Printer crashed unexpectedly'),
+          ),
+        );
 
-      final response = await crashingBolt.post('/unusual', data: {'valid': true});
+        final response = await crashingBolt.post(
+          '/unusual',
+          data: {'valid': true},
+        );
 
-      // Request must succeed completely without crashing despite logger throwing
-      expect(response.isSuccess, isTrue);
-      expect(response.statusCode, equals(200));
-      expect(response.responseData, equals({'uploaded': true}));
-    });
+        // Request must succeed completely without crashing despite logger throwing
+        expect(response.isSuccess, isTrue);
+        expect(response.statusCode, equals(200));
+        expect(response.responseData, equals({'uploaded': true}));
+      },
+    );
   });
 
   group('DioBolt Logging - Disabled state', () {
