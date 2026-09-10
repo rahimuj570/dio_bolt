@@ -150,9 +150,11 @@ void main() {
       expect(requestCount, equals(2));
     });
 
-    test('5. Cancellation during retry delay aborts immediately', () async {
+    test('5. Cancellation during retry delay aborts immediately without sending retry request', () async {
+      int requestCount = 0;
       final dio = Dio(BaseOptions(baseUrl: 'https://api.example.com'));
       dio.httpClientAdapter = MockAdapter((options) async {
+        requestCount++;
         return jsonBody({'error': '503'}, statusCode: 503);
       });
 
@@ -178,6 +180,7 @@ void main() {
       expect(response.isSuccess, isFalse);
       expect(response.statusCode, equals(0));
       expect(response.message, contains('Request was cancelled'));
+      expect(requestCount, equals(1)); // Proves retry was never dispatched!
     });
 
     test('6. Preserves RequestOptions across retries', () async {

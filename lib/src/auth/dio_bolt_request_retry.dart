@@ -26,7 +26,10 @@ class DioBoltRequestRetry {
   /// - One-shot streaming payloads (`Stream<List<int>>`) are NOT replayable.
   bool isReplayable(dynamic data) {
     if (data == null) return true;
-    if (data is Map || data is List || data is String || data is num || data is bool) {
+    if (data is String || data is num || data is bool) {
+      return true;
+    }
+    if (data is Map || data is List) {
       return true;
     }
     if (data is Uint8List || (data is List<int> && data is! Stream)) {
@@ -35,10 +38,7 @@ class DioBoltRequestRetry {
     if (data is FormData) {
       return true;
     }
-    if (data is Stream) {
-      return false;
-    }
-    return true;
+    return false;
   }
 
   /// Constructs the retried [RequestOptions] with updated authorization header,

@@ -35,6 +35,9 @@ void main() {
 
       // Unsafe payload: Stream
       expect(retryHandler.isReplayable(Stream<List<int>>.empty()), isFalse);
+
+      // Unsafe payload: Unknown custom object
+      expect(retryHandler.isReplayable(Object()), isFalse);
     });
 
     test('prepareRetryOptions sets retry marker, replaces authorization header, and clones FormData', () {

@@ -15,6 +15,8 @@ typedef RetryEvaluator = FutureOr<bool> Function(
 
 /// Custom delay calculation function.
 ///
+/// When provided, this calculator takes full precedence over default delay computation,
+/// including 429 `Retry-After` parsing and exponential backoff curves.
 /// Useful for injecting deterministic delays in tests or implementing custom backoff curves.
 typedef RetryDelayCalculator = Duration Function(
   int attempt,

@@ -110,13 +110,67 @@ void main() {
       expect(delay, equals(const Duration(seconds: 2)));
     });
 
-    test('custom delayCalculator takes precedence', () {
+    test('invalid 429 Retry-After header falls back to exponential backoff', () {
+      const config = DioBoltRetryConfig(
+        initialDelay: Duration(milliseconds: 300),
+        useJitter: false,
+      );
+
+      final error = DioException(
+        requestOptions: RequestOptions(path: '/rate-limited'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/rate-limited'),
+          statusCode: 429,
+          headers: Headers.fromMap({
+            'retry-after': ['not-a-number-or-date'],
+          }),
+        ),
+      );
+
+      final delay = calculator.calculateDelay(attempt: 1, config: config, error: error);
+      expect(delay, equals(const Duration(milliseconds: 300)));
+    });
+
+    test('429 Retry-After date in the past falls back to exponential backoff', () {
+      const config = DioBoltRetryConfig(
+        initialDelay: Duration(milliseconds: 300),
+        useJitter: false,
+      );
+
+      final pastDate = DateTime.now().subtract(const Duration(minutes: 5));
+      final error = DioException(
+        requestOptions: RequestOptions(path: '/rate-limited'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/rate-limited'),
+          statusCode: 429,
+          headers: Headers.fromMap({
+            'retry-after': [HttpDate.format(pastDate)],
+          }),
+        ),
+      );
+
+      final delay = calculator.calculateDelay(attempt: 1, config: config, error: error);
+      expect(delay, equals(const Duration(milliseconds: 300)));
+    });
+
+    test('custom delayCalculator takes precedence over 429 Retry-After', () {
       final config = DioBoltRetryConfig(
         delayCalculator: (attempt, initial, max, mult, jitter, err) => Duration(milliseconds: attempt * 50),
       );
 
-      expect(calculator.calculateDelay(attempt: 1, config: config), equals(const Duration(milliseconds: 50)));
-      expect(calculator.calculateDelay(attempt: 2, config: config), equals(const Duration(milliseconds: 100)));
+      final error = DioException(
+        requestOptions: RequestOptions(path: '/rate-limited'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/rate-limited'),
+          statusCode: 429,
+          headers: Headers.fromMap({
+            'retry-after': ['120'],
+          }),
+        ),
+      );
+
+      expect(calculator.calculateDelay(attempt: 1, config: config, error: error), equals(const Duration(milliseconds: 50)));
+      expect(calculator.calculateDelay(attempt: 2, config: config, error: error), equals(const Duration(milliseconds: 100)));
     });
   });
 }

@@ -127,9 +127,20 @@ class DioBoltRetryInterceptor extends Interceptor {
       return Future.delayed(delay);
     }
 
+    if (cancelToken.isCancelled) {
+      throw cancelToken.cancelError ??
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.cancel,
+            message: 'Request was cancelled before retry delay.',
+          );
+    }
+
     final completer = Completer<void>();
+    Timer? timer;
 
     void onCancel() {
+      timer?.cancel();
       if (!completer.isCompleted) {
         completer.completeError(
           cancelToken.cancelError ??
@@ -144,10 +155,13 @@ class DioBoltRetryInterceptor extends Interceptor {
 
     cancelToken.whenCancel.then((_) => onCancel()).catchError((_) {});
 
-    return Future.any([
-      Future.delayed(delay),
-      completer.future,
-    ]);
+    timer = Timer(delay, () {
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
+    });
+
+    return completer.future;
   }
 
   String _formatDioErrorReason(DioExceptionType type) {

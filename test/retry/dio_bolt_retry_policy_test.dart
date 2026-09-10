@@ -127,7 +127,16 @@ void main() {
       expect(should, isFalse, reason: 'One-shot stream must NOT be retried even with explicit override');
     });
 
-    test('10. Max retries limit enforcement', () async {
+    test('10. Body replayability: Unknown/custom body types REJECT retry even with override', () async {
+      final customObject = _UnknownCustomPayload('some data');
+      final overrideExtra = Options().copyWithRetry(enabled: true).extra;
+
+      final err = makeHttpError(503, data: customObject, extra: overrideExtra);
+      final should = await policy.shouldRetry(err, err.requestOptions, 0);
+      expect(should, isFalse, reason: 'Unknown custom object must NOT be retried even with explicit override');
+    });
+
+    test('11. Max retries limit enforcement', () async {
       final err = makeHttpError(503);
       // default maxRetries is 3
       expect(await policy.shouldRetry(err, err.requestOptions, 0), isTrue); // attempt 0 -> retry 1
@@ -136,7 +145,7 @@ void main() {
       expect(await policy.shouldRetry(err, err.requestOptions, 3), isFalse); // attempt 3 -> max reached!
     });
 
-    test('11. Custom retryEvaluator with (error, options, attempt)', () async {
+    test('12. Custom retryEvaluator with (error, options, attempt)', () async {
       final customPolicy = DioBoltRetryPolicy(
         config: DioBoltRetryConfig(
           retryEvaluator: (error, options, attempt) {
@@ -155,4 +164,9 @@ void main() {
       expect(await customPolicy.shouldRetry(errDenied, reqDenied, 0), isFalse);
     });
   });
+}
+
+class _UnknownCustomPayload {
+  final String value;
+  _UnknownCustomPayload(this.value);
 }

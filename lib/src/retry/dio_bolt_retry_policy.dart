@@ -75,9 +75,21 @@ class DioBoltRetryPolicy {
   }
 
   /// Evaluates whether [data] is safely replayable across multiple request attempts.
+  ///
+  /// Strictly permits:
+  /// - `null`
+  /// - `String`, `num`, `bool`
+  /// - `Map`, `List`
+  /// - `Uint8List`, `List<int>` byte buffers (non-Stream)
+  /// - Safely replayable `FormData`
+  ///
+  /// Rejects `Stream`, one-shot stream data, and all unknown/custom body types.
   bool isReplayable(dynamic data) {
     if (data == null) return true;
-    if (data is String || data is num || data is bool || data is Map || data is List) {
+    if (data is String || data is num || data is bool) {
+      return true;
+    }
+    if (data is Map || data is List) {
       return true;
     }
     if (data is Uint8List || (data is List<int> && data is! Stream)) {
@@ -86,10 +98,8 @@ class DioBoltRetryPolicy {
     if (data is FormData) {
       return _isFormDataReplayable(data);
     }
-    if (data is Stream) {
-      return false;
-    }
-    return true;
+    // Any Stream or unknown/custom body object is strictly non-replayable
+    return false;
   }
 
   /// Inspects [FormData] contents to ensure no one-shot or finalized streams exist.
