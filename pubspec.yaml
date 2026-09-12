@@ -1,8 +1,9 @@
 name: dio_bolt
 description: A lightweight production networking layer built on top of Dio that removes boilerplate while keeping Dio fully accessible.
 version: 0.0.1
-# repository: https://github.com/my_org/dio_bolt
-# issue_tracker: https://github.com/my_org/dio_bolt/issues
+homepage: https://github.com/rahimuj570/dio_bolt
+repository: https://github.com/rahimuj570/dio_bolt
+issue_tracker: https://github.com/rahimuj570/dio_bolt/issues
 
 environment:
   sdk: ^3.9.0
@@ -18,5 +19,5 @@ topics:
   - dio
   - networking
   - http
-  - api
   - rest
+  - flutter

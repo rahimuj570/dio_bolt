@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.9+-0175C2.svg?logo=dart" alt="Dart"></a>
-  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.0+-02569B.svg?logo=flutter" alt="Flutter"></a>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.35+-02569B.svg?logo=flutter" alt="Flutter"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
 </p>
 
@@ -383,7 +383,7 @@ RESPONSE DATA :
 
 ## File Uploads
 
-Upload files using `DioBoltFile` descriptors. Dio Bolt automatically constructs `FormData` and recreates fresh multipart streams on retries or token refreshes.
+Upload files using `DioBoltFile` descriptors. Dio Bolt automatically constructs `FormData` and reconstructs fresh multipart streams on retries or token refreshes for replayable file descriptors (`DioBoltFile.fromPath` and `DioBoltFile.fromBytes`). Stream-backed files (`DioBoltFile.fromStream`) and generic pre-constructed `FormData` are non-replayable and are safely rejected from automatic retry.
 
 ```dart
 // 1. Single file from path
@@ -543,9 +543,9 @@ dart run example/main.dart
 ## Compatibility
 
 - **Dart SDK**: `^3.9.0`
-- **Flutter**: `3.0+`
+- **Flutter**: `3.35+` (aligned with Dart SDK `^3.9.0` constraint)
 - **Dio**: `^5.11.1`
-- **Supported Platforms**: Android, iOS, macOS, Windows, Linux, and Server. (Disk-based file paths require filesystem access via `dart:io`; in-memory operations and standard HTTP requests work across all platforms supported by Dio).
+- **Supported Platforms**: Android, iOS, macOS, Windows, Linux, and Server (Dart VM). (Flutter Web is not supported due to native filesystem transfer requirements using `dart:io`).
 
 ---
 

@@ -96,8 +96,8 @@ class DioBolt {
   /// Performs an HTTP GET request and returns a [DioBoltResponse].
   ///
   /// The complete raw response body is preserved in [DioBoltResponse.responseData].
-  /// When [headers] is passed, it is merged with [options.headers], with
-  /// explicit [headers] taking precedence over duplicate keys in [options.headers].
+  /// When [headers] is passed, it is merged with [Options.headers], with
+  /// explicit [headers] taking precedence over duplicate keys in [Options.headers].
   ///
   /// Always returns a [DioBoltResponse]; never throws for normal HTTP or network failures.
   Future<DioBoltResponse> get(
@@ -454,9 +454,9 @@ class DioBolt {
   // Helpers
   // ===========================================================================
 
-  /// Merges explicit [headers] with [options.headers].
+  /// Merges explicit [headers] with [Options.headers].
   ///
-  /// Explicit [headers] will overwrite duplicate keys present in [options.headers].
+  /// Explicit [headers] will overwrite duplicate keys present in [Options.headers].
   Options _mergeOptions(Options? options, Map<String, dynamic>? headers) {
     if (headers == null || headers.isEmpty) {
       return options ?? Options();
