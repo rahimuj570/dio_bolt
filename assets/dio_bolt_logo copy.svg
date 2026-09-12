@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#161b26" />
+      <stop offset="100%" stop-color="#0d111a" />
+    </linearGradient>
+
+    <!-- Request Line & Node Gradient -->
+    <linearGradient id="reqGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+
+    <!-- Bolt Amber Gradient -->
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <!-- Response Line & Node Gradient -->
+    <linearGradient id="resGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+  </defs>
+
+  <!-- Container Icon Squircle -->
+  <rect x="24" y="24" width="464" height="464" rx="104" fill="url(#bg)" stroke="#222a3a" stroke-width="3" />
+
+  <!-- Unified Network Pipeline: Inbound Request (Blue) -->
+  <g>
+    <!-- Request Inbound Line -->
+    <line x1="116" y1="116" x2="228" y2="228" stroke="url(#reqGrad)" stroke-width="22" stroke-linecap="round" />
+    <!-- Request Origin Node -->
+    <circle cx="116" cy="116" r="30" fill="url(#reqGrad)" />
+    <circle cx="116" cy="116" r="10" fill="#ffffff" />
+  </g>
+
+  <!-- Unified Network Pipeline: Outbound Response (Amber) -->
+  <g>
+    <!-- Response Outbound Line -->
+    <line x1="284" y1="284" x2="396" y2="396" stroke="url(#resGrad)" stroke-width="22" stroke-linecap="round" />
+    <!-- Response Target Node -->
+    <circle cx="396" cy="396" r="30" fill="url(#resGrad)" />
+    <circle cx="396" cy="396" r="10" fill="#ffffff" />
+  </g>
+
+  <!-- Central Fast-Processing Lightning Bolt -->
+  <path d="M 284 84 
+           L 188 248 
+           L 260 248 
+           L 228 428 
+           L 324 264 
+           L 252 264 
+           Z" 
+        fill="url(#boltGrad)" 
+        stroke="#0d111a" 
+        stroke-width="10" 
+        stroke-linejoin="round" />
+
+  <!-- High-Current Core Accent -->
+  <polygon points="284,84 228,248 260,248 228,428 276,300 252,264" fill="#ffffff" opacity="0.22" />
+</svg>
